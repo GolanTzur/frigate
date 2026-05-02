@@ -137,6 +137,7 @@ export default function LiveCameraView({
   fullscreen,
   toggleFullscreen,
 }: LiveCameraViewProps) {
+  console.log("LiveCameraView mounted");
   const { t } = useTranslation(["views/live", "components/dialog"]);
   const navigate = useNavigate();
   const { isPortrait } = useMobileOrientation();
@@ -594,29 +595,35 @@ export default function LiveCameraView({
               />
             )}
             <FrigateCameraFeatures
-              camera={camera}
-              recordingEnabled={camera.record.enabled_in_config}
-              audioDetectEnabled={camera.audio.enabled_in_config}
-              autotrackingEnabled={camera.onvif.autotracking.enabled_in_config}
-              transcriptionEnabled={
-                camera.audio_transcription.enabled_in_config
-              }
-              fullscreen={fullscreen}
-              streamName={streamName ?? ""}
-              setStreamName={setStreamName}
-              preferredLiveMode={preferredLiveMode}
-              playInBackground={playInBackground ?? false}
-              setPlayInBackground={setPlayInBackground}
-              showStats={showStats}
-              setShowStats={setShowStats}
-              isRestreamed={isRestreamed ?? false}
-              setLowBandwidth={setLowBandwidth}
-              supportsAudioOutput={supportsAudioOutput}
-              supports2WayTalk={supports2WayTalk}
-              cameraEnabled={cameraEnabled}
-              debug={debug}
-              setDebug={setDebug}
-            />
+  camera={camera}
+  recordingEnabled={camera?.record?.enabled_in_config ?? camera?.record?.enabled ?? false}
+  audioDetectEnabled={camera?.audio?.enabled_in_config ?? camera?.audio?.enabled ?? false}
+  autotrackingEnabled={
+    camera?.onvif?.autotracking?.enabled_in_config ??
+    camera?.onvif?.autotracking?.enabled ??
+    false
+  }
+  transcriptionEnabled={
+    camera?.audio_transcription?.enabled_in_config ??
+    camera?.audio_transcription?.enabled ??
+    false
+  }
+  fullscreen={fullscreen}
+  streamName={streamName ?? ""}
+  setStreamName={setStreamName}
+  preferredLiveMode={preferredLiveMode}
+  playInBackground={playInBackground ?? false}
+  setPlayInBackground={setPlayInBackground}
+  showStats={showStats}
+  setShowStats={setShowStats}
+  isRestreamed={isRestreamed ?? false}
+  setLowBandwidth={setLowBandwidth}
+  supportsAudioOutput={supportsAudioOutput}
+  supports2WayTalk={supports2WayTalk}
+  cameraEnabled={cameraEnabled}
+  debug={debug}
+  setDebug={setDebug}
+/>
           </div>
         </div>
         {!debug ? (
@@ -1353,7 +1360,7 @@ function FrigateCameraFeatures({
   if (fullscreen) {
     return;
   }
-
+console.log("LiveCameraView rendered");
   return (
     <Drawer>
       <DrawerTrigger>

@@ -23,6 +23,7 @@ export function ApiProvider({ children, options }: ApiProviderType) {
       value={{
         fetcher: (key) => {
           const [path, params] = Array.isArray(key) ? key : [key, undefined];
+           console.log("API CALL →", path); // 👈 ADD THIS
           return axios.get(path, { params }).then((res) => res.data);
         },
         onError: (error, _key) => {

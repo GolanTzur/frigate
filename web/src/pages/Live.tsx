@@ -18,14 +18,23 @@ function Live() {
   const { data: config } = useSWR<FrigateConfig>("config");
   const isAdmin = useIsAdmin();
 
+
+  
+
   // selection
 
   const [selectedCameraName, setSelectedCameraName] = useHashState();
+
+console.log("selectedCameraName:", selectedCameraName);
+console.log("config loaded:", !!config);
+
   const [cameraGroup, setCameraGroup, loaded] = useUserPersistedOverlayState(
     "cameraGroup",
     "default" as string,
   );
 
+  console.log("selectedCamera:", selectedCameraName);
+     
   useSearchEffect("group", (cameraGroup) => {
     if (config && cameraGroup && loaded) {
       const group = config.camera_groups[cameraGroup];
@@ -50,6 +59,11 @@ function Live() {
 
   const { fullscreen, toggleFullscreen, supportsFullScreen } =
     useFullscreen(mainRef);
+
+
+//console.log("selectedCameraName:", selectedCameraName);
+//console.log("config cameras:", config?.cameras);
+
 
   useKeyboardListener(["f"], (key, modifiers) => {
     if (!modifiers.down) {
@@ -84,6 +98,15 @@ function Live() {
       document.title = t("documentTitle", { ns: "views/live" });
     }
   }, [cameraGroup, selectedCameraName, t]);
+
+  useEffect(() => {
+  if (!selectedCameraName) {
+    setSelectedCameraName("local_cam");
+  }
+}, []); // ✅ run once only
+
+console.log("selectedCameraName:", selectedCameraName);
+console.log("config loaded:", !!config);
 
   // settings
 

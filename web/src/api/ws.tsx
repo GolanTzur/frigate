@@ -29,7 +29,9 @@ type WsState = {
 type useValueReturn = [WsState, (update: Update) => void];
 
 function useValue(): useValueReturn {
-  const wsUrl = `${baseUrl.replace(/^http/, "ws")}ws`;
+  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  const host = process.env.NODE_ENV === "development" ? "localhost:5000" : window.location.host;
+  const wsUrl = `${protocol}//${host}/ws`;
 
   // main state
 

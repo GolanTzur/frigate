@@ -951,6 +951,8 @@ function MotionReview({
   const alignedAfter = alignStartDateToTimeline(timeRange.after);
   const alignedBefore = alignEndDateToTimeline(timeRange.before);
 
+console.log("THIS IS THE REAL FILE");
+
   const { data: motionData } = useSWR<MotionData[]>([
     "review/activity/motion",
     {

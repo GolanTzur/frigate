@@ -34,8 +34,11 @@ export default function WebRtcPlayer({
   // metadata
 
   const wsURL = useMemo(() => {
-    return `${baseUrl.replace(/^http/, "ws")}live/webrtc/api/ws?src=${camera}`;
-  }, [camera]);
+  const base = baseUrl || window.location.origin;
+  return `${base.replace(/^http/, "ws")}/live/webrtc/api/ws?src=${camera}`;
+}, [camera]);
+
+console.log("WS URL:", wsURL);
 
   // error handler
   const handleError = useCallback(

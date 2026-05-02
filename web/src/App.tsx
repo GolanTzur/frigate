@@ -76,12 +76,12 @@ function DefaultAppView() {
           <Routes>
             <Route
               element={
-                mainRouteRoles ? (
-                  <ProtectedRoute requiredRoles={mainRouteRoles} />
-                ) : (
-                  <ActivityIndicator className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
-                )
-              }
+               mainRouteRoles ? (
+                   <ProtectedRoute requiredRoles={mainRouteRoles} />
+                     ) : (
+                        <ProtectedRoute requiredRoles={[]} />
+                        )
+                  }
             >
               <Route index element={<Live />} />
               <Route path="/review" element={<Events />} />

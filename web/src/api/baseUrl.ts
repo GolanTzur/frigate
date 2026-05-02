@@ -4,4 +4,4 @@ declare global {
   }
 }
 
-export const baseUrl = `${window.location.protocol}//${window.location.host}${window.baseUrl || "/"}`;
+export const baseUrl = window.location.origin + "/";

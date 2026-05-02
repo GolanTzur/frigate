@@ -1,8 +1,16 @@
 /// <reference types="vitest" />
 import path, { resolve } from "path";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
+import { createRequire } from "module";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
-import monacoEditorPlugin from "vite-plugin-monaco-editor";
+
+const require = createRequire(import.meta.url);
+const monacoEditorPlugin = require("vite-plugin-monaco-editor").default;
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const proxyHost = process.env.PROXY_HOST || "localhost:5000";
 
@@ -12,31 +20,41 @@ export default defineConfig({
     "import.meta.vitest": "undefined",
   },
   server: {
-    proxy: {
-      "/api": {
-        target: `http://${proxyHost}`,
-        ws: true,
-      },
-      "/vod": {
-        target: `http://${proxyHost}`,
-      },
-      "/clips": {
-        target: `http://${proxyHost}`,
-      },
-      "/exports": {
-        target: `http://${proxyHost}`,
-      },
-      "/ws": {
-        target: `ws://${proxyHost}`,
-        ws: true,
-      },
-      "/live": {
-        target: `ws://${proxyHost}`,
-        changeOrigin: true,
-        ws: true,
-      },
+  proxy: {
+    "/api": {
+      target: "http://localhost:5000",
+      changeOrigin: true,
+    },
+
+     "/clips": {
+      target: "http://localhost:5000",
+      changeOrigin: true,
+    },
+
+    "/recordings": {
+      target: "http://localhost:5000",
+      changeOrigin: true,
+    },
+
+    "/live": {
+      target: "http://localhost:5000",
+      changeOrigin: true,
+    },
+
+    "/ws": {
+      target: "ws://localhost:5000",
+      ws: true,
+      changeOrigin: true,
+    },
+
+    "/live/jsmpeg": {
+      target: "ws://localhost:5000",
+      ws: true,
+      changeOrigin: true,
     },
   },
+},
+
   build: {
     rollupOptions: {
       input: {
@@ -47,7 +65,7 @@ export default defineConfig({
   },
   plugins: [
     react(),
-    monacoEditorPlugin.default({
+    monacoEditorPlugin({
       customWorkers: [{ label: "yaml", entry: "monaco-yaml/yaml.worker" }],
       languageWorkers: ["editorWorkerService"], // we don't use any of the default languages
     }),

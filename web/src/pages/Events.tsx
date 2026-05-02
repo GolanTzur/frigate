@@ -39,7 +39,7 @@ export default function Events() {
 
   const [severity, setSeverity] = useOverlayState<ReviewSeverity>(
     "severity",
-    "alert",
+    "detection",
   );
 
   const [showReviewed, setShowReviewed] = useUserPersistence(
@@ -164,20 +164,25 @@ export default function Events() {
 
   // review paging
 
-  const [beforeTs, setBeforeTs] = useState(Math.ceil(Date.now() / 1000));
-  const last24Hours = useMemo(() => {
-    return { before: beforeTs, after: getHoursAgo(24) };
-  }, [beforeTs]);
-  const selectedTimeRange = useMemo(() => {
-    if (reviewSearchParams["after"] == undefined) {
-      return last24Hours;
-    }
+ const [beforeTs, setBeforeTs] = useState(Math.ceil(Date.now() / 1000));
 
-    return {
-      before: Math.ceil(reviewSearchParams["before"]),
-      after: Math.floor(reviewSearchParams["after"]),
-    };
-  }, [last24Hours, reviewSearchParams]);
+// 🔥 freeze "after" ONCE
+const initialAfter = useMemo(() => getHoursAgo(24), []);
+
+const last24Hours = useMemo(() => {
+  return { before: beforeTs, after: initialAfter };
+}, [beforeTs, initialAfter]);
+
+const selectedTimeRange = useMemo(() => {
+  if (reviewSearchParams["after"] == undefined) {
+    return last24Hours;
+  }
+
+  return {
+    before: Math.ceil(reviewSearchParams["before"]),
+    after: Math.floor(reviewSearchParams["after"]),
+  };
+}, [last24Hours, reviewSearchParams]);
 
   // we want to update the items whenever the severity changes
   useEffect(() => {
@@ -195,31 +200,70 @@ export default function Events() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [severity]);
 
-  const reviewSegmentFetcher = useCallback((key: Array<string> | string) => {
-    const [path, params] = Array.isArray(key) ? key : [key, undefined];
-    return axios.get(path, { params }).then((res) => res.data);
-  }, []);
+  const reviewSegmentFetcher = useCallback((key: string) => {
+  console.log("FETCHING URL:", key);
 
-  const getKey = useCallback(() => {
-    const params = {
-      cameras: reviewSearchParams["cameras"],
-      labels: reviewSearchParams["labels"],
-      zones: reviewSearchParams["zones"],
-      reviewed: 1,
-      before: reviewSearchParams["before"] || last24Hours.before,
-      after: reviewSearchParams["after"] || last24Hours.after,
-    };
-    return ["review", params];
-  }, [reviewSearchParams, last24Hours]);
+  return axios.get(key).then((res) => {
+    console.log("API RESPONSE:", res.data);
+    return res.data;
+  });
+}, []);
 
-  const { data: reviews, mutate: updateSegments } = useSWR<ReviewSegment[]>(
-    getKey,
-    reviewSegmentFetcher,
-    {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-    },
-  );
+  
+
+const now = Math.floor(Date.now() / 1000);
+
+// 🔥 renamed variables
+// 🔥 normalize cameras correctly
+// 🔥 FORCE CLEAN VALUES (no trust in params)
+
+const selectedCameras =
+  Array.isArray(reviewSearchParams["cameras"]) &&
+  reviewSearchParams["cameras"].length > 0
+    ? reviewSearchParams["cameras"].join(",")
+    : "local_cam";
+
+// 🔥 HARD clamp timestamps
+const safeBefore = last24Hours.before;
+const safeAfter = last24Hours.after;
+
+// 🔥 build params safely (NO empty values)
+const params = new URLSearchParams({
+  reviewed: "1",
+  before: String(safeBefore),
+  after: String(safeAfter),
+  cameras: selectedCameras,
+});
+
+const reviewKey = useMemo(() => {
+  const camVal =
+    selectedCameras && selectedCameras.length > 0
+      ? selectedCameras
+      : "local_cam";
+
+  const key =
+    `review?reviewed=1` +
+    `&before=${Math.floor(Date.now() / 1000)}` +
+    `&after=${Math.floor(Date.now() / 1000) - 86400}` + // last 24h
+    `&cameras=${camVal}`;
+
+  console.log("FINAL WORKING KEY:", key);
+
+  return key;
+}, [selectedCameras]);
+
+
+
+
+// 🔥 SWR
+const { data: reviews, mutate: updateSegments } = useSWR<ReviewSegment[]>(
+  reviewKey,
+  reviewSegmentFetcher,
+  {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+  }
+);
 
   const reviewItems = useMemo<SegmentedReviewData>(() => {
     if (!reviews) {
@@ -256,49 +300,90 @@ export default function Events() {
   }, [reviews]);
 
   const currentItems = useMemo(() => {
-    if (!reviewItems || !severity) {
-      return null;
-    }
+  console.log("severity:", severity);
+  console.log("showReviewed:", showReviewed);
+  console.log("reviewItems:", reviewItems);
 
-    let current;
+  if (!reviewItems || !severity) {
+    console.log("NO reviewItems OR severity");
+    return null;
+  }
 
-    if (reviewFilter?.showAll) {
-      current = reviewItems.all;
-    } else {
-      current = reviewItems[severity];
-    }
+  let current;
 
-    if (!current || current.length == 0) {
-      return [];
-    }
+  if (reviewFilter?.showAll) {
+    current = reviewItems.all;
+  } else {
+    current = reviewItems[severity];
+  }
 
-    if (!showReviewed) {
-      return current.filter((seg) => !seg.has_been_reviewed);
-    } else {
-      return current;
-    }
-    // only refresh when severity or filter changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [severity, reviewFilter, showReviewed, reviewItems?.all.length]);
+  console.log("CURRENT BEFORE FILTER:", current);
+
+  if (!current || current.length == 0) {
+    console.log("EMPTY CURRENT");
+    return [];
+  }
+
+  if (!showReviewed) {
+    const filtered = current.filter((seg) => !seg.has_been_reviewed);
+    console.log("FILTERED (not reviewed):", filtered);
+    return filtered;
+  } else {
+    console.log("RETURNING ALL:", current);
+    return current;
+  }
+}, [severity, reviewFilter, showReviewed, reviewItems?.all.length]);
 
   // review summary
 
-  const { data: reviewSummary, mutate: updateSummary } = useSWR<ReviewSummary>(
-    [
-      "review/summary",
-      {
-        timezone: timezone,
-        cameras: reviewSearchParams["cameras"] ?? null,
-        labels: reviewSearchParams["labels"] ?? null,
-        zones: reviewSearchParams["zones"] ?? null,
-      },
-    ],
-    {
-      revalidateOnFocus: true,
-      refreshInterval: 30000,
-      revalidateOnReconnect: false,
-    },
-  );
+  // --- extract primitives ---
+// --- normalize inputs safely ---
+const camParam =
+  Array.isArray(reviewSearchParams["cameras"]) &&
+  reviewSearchParams["cameras"].length > 0
+    ? reviewSearchParams["cameras"].join(",")
+    : "local_cam";
+
+const labelParam =
+  Array.isArray(reviewSearchParams["labels"]) &&
+  reviewSearchParams["labels"].length > 0
+    ? reviewSearchParams["labels"].join(",")
+    : null;
+
+const zoneParam =
+  Array.isArray(reviewSearchParams["zones"]) &&
+  reviewSearchParams["zones"].length > 0
+    ? reviewSearchParams["zones"].join(",")
+    : null;
+
+// ✅ fix timezone type
+const tz =
+  timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+const query = new URLSearchParams({
+  timezone: tz,
+  cameras: camParam,
+});
+
+if (labelParam) query.set("labels", labelParam);
+if (zoneParam) query.set("zones", zoneParam);
+
+const summaryKey = `review/summary?${query.toString()}`;
+
+console.log("FIXED summaryKey:", summaryKey);
+
+// --- SWR ---
+const { data: reviewSummary, mutate: updateSummary } = useSWR<ReviewSummary>(
+  summaryKey,
+  {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    shouldRetryOnError: false,
+    refreshInterval: 0,
+  }
+);
+
+
 
   const reloadData = useCallback(() => {
     setBeforeTs(Date.now() / 1000);
@@ -307,13 +392,18 @@ export default function Events() {
 
   // recordings summary
 
-  const { data: recordingsSummary } = useSWR<RecordingsSummary>([
-    "recordings/summary",
-    {
-      timezone: timezone,
-      cameras: reviewSearchParams["cameras"] ?? null,
-    },
-  ]);
+  const selectedCamerasReview =
+  reviewSearchParams["cameras"]?.length
+    ? reviewSearchParams["cameras"].join(",")
+    : "local_cam";
+
+const recordingsSummaryKey = `recordings/summary?timezone=${timezone}&cameras=${selectedCamerasReview}`;
+
+console.log("recordingsSummaryKey:", recordingsSummaryKey);
+
+const { data: recordingsSummary } = useSWR<RecordingsSummary>(
+  recordingsSummaryKey
+);
 
   // preview videos
   const previewTimes = useMemo(() => {
@@ -513,9 +603,9 @@ export default function Events() {
         relevantPreviews={allPreviews}
         timeRange={selectedTimeRange}
         filter={reviewFilter}
-        severity={severity ?? "alert"}
+        severity={severity || "alert"}
         startTime={startTime}
-        showReviewed={showReviewed ?? false}
+        showReviewed={true}
         setShowReviewed={setShowReviewed}
         setSeverity={setSeverity}
         markItemAsReviewed={markItemAsReviewed}
@@ -523,10 +613,12 @@ export default function Events() {
         onOpenRecording={setRecording}
         pullLatestData={reloadData}
         updateFilter={onUpdateFilter}
+        
       />
     );
   }
 }
+
 
 function getHoursAgo(hours: number): number {
   const now = new Date();

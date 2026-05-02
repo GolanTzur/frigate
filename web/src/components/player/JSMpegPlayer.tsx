@@ -123,8 +123,12 @@ export default function JSMpegPlayer({
 
     setHasData(false);
 
+    console.log("FINAL URL:", url);
+
     if (videoWrapper && playbackEnabled) {
       // Delayed init to avoid issues with react strict mode
+
+      
       const initPlayer = setTimeout(() => {
         videoElement = new JSMpeg.VideoElement(
           videoWrapper,

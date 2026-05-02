@@ -73,6 +73,8 @@ import {
 
 const DATA_REFRESH_TIME = 600000; // 10 minutes
 
+console.log("RENDER RecordingView");
+
 type RecordingViewProps = {
   startCamera: string;
   startTime: number;
@@ -943,25 +945,47 @@ function Timeline({
   const alignedAfter = alignStartDateToTimeline(timeRange.after);
   const alignedBefore = alignEndDateToTimeline(timeRange.before);
 
-  const { data: motionData, isLoading } = useSWR<MotionData[]>([
-    "review/activity/motion",
-    {
-      before: alignedBefore,
-      after: alignedAfter,
-      scale: Math.round(zoomSettings.segmentDuration / 2),
-      cameras: mainCamera,
-    },
-  ]);
 
-  const { data: noRecordings } = useSWR<RecordingSegment[]>([
-    "recordings/unavailable",
-    {
-      before: alignedBefore,
-      after: alignedAfter,
-      scale: Math.round(zoomSettings.segmentDuration),
-      cameras: mainCamera,
-    },
-  ]);
+const now = Math.floor(Date.now() / 1000);
+
+// primitives only
+const segmentDuration = zoomSettings?.segmentDuration ?? 60;
+const cameraName = typeof mainCamera === "string" ? mainCamera : "";
+
+// safe timestamps
+const safeBefore = Number.isFinite(alignedBefore) ? alignedBefore : now;
+const safeAfter = Number.isFinite(alignedAfter) ? alignedAfter : now - 3600;
+
+//console.log("cameraName:", cameraName);
+//console.log("safeBefore:", safeBefore);
+//console.log("safeAfter:", safeAfter);
+
+
+// --- keys (STRING ONLY) ---
+const motionKey = `review/activity/motion?before=${safeBefore}&after=${safeAfter}&scale=${Math.round(
+  segmentDuration / 2
+)}&cameras=${cameraName}`;
+
+const reviewKey = `review/unavailable?before=${safeBefore}&after=${safeAfter}&scale=${Math.round(
+  segmentDuration
+)}&cameras=${cameraName}`;
+
+// debug
+console.log("motionKey:", motionKey);
+console.log("reviewKey:", reviewKey);
+
+// --- SWR ---
+const { data: motionData, isLoading } = useSWR<MotionData[]>(motionKey, {
+  revalidateOnFocus: false,
+  revalidateOnReconnect: false,
+  shouldRetryOnError: false,   // 🔥 ADD THIS
+});
+
+const { data: noRecordings } = useSWR<RecordingSegment[]>(reviewKey, {
+  revalidateOnFocus: false,
+  revalidateOnReconnect: false,
+  shouldRetryOnError: false,   // 🔥 ADD THIS
+});
 
   const [exportStart, setExportStartTime] = useState<number>(0);
   const [exportEnd, setExportEndTime] = useState<number>(0);

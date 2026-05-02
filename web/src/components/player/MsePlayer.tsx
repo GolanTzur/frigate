@@ -91,8 +91,9 @@ function MSEPlayer({
   const mseResponseReceivedRef = useRef<boolean>(false);
 
   const wsURL = useMemo(() => {
-    return `${baseUrl.replace(/^http/, "ws")}live/mse/api/ws?src=${camera}`;
-  }, [camera]);
+  const base = baseUrl || window.location.origin;
+  return `${base.replace(/^http/, "ws")}/live/webrtc/api/ws?src=${camera}`;
+}, [camera]);
 
   const handleError = useCallback(
     (error: LivePlayerError, description: string = "Unknown error") => {

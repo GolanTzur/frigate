@@ -9,7 +9,10 @@ import { baseUrl } from "@/api/baseUrl";
 import { useMemo } from "react";
 
 function Sidebar() {
-  const basePath = useMemo(() => new URL(baseUrl).pathname, []);
+  const basePath = useMemo(
+  () => new URL(baseUrl || window.location.origin).pathname,
+  []
+);
 
   const isRootMatch = useMatch("/");
   const isBasePathMatch = useMatch(basePath);
