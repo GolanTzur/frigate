@@ -967,7 +967,7 @@ const motionKey = `review/activity/motion?before=${safeBefore}&after=${safeAfter
   segmentDuration / 2
 )}&cameras=${cameraName}`;
 
-const reviewKey = `review/unavailable?before=${safeBefore}&after=${safeAfter}&scale=${Math.round(
+const reviewKey = `recordings/unavailable?before=${safeBefore}&after=${safeAfter}&scale=${Math.round(
   segmentDuration
 )}&cameras=${cameraName}`;
 

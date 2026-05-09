@@ -179,10 +179,8 @@ export default function EventView({
       } else {
         // If a specific date is selected in the calendar and it's after the event start,
         // use the selected date instead of the event start time
-        const effectiveStartTime =
-          timeRange.after > review.start_time
-            ? timeRange.after
-            : review.start_time;
+        
+        const effectiveStartTime = review.start_time;
 
         onOpenRecording({
           camera: review.camera,

@@ -71,6 +71,8 @@ export default function ExportDialog({
   const { t } = useTranslation(["components/dialog"]);
   const [name, setName] = useState("");
 
+  console.log(originalClipRange?.before, originalClipRange?.after);
+
   const onStartExport = useCallback(() => {
     if (!range) {
       toast.error(t("export.toast.error.noVaildTimeSelected"), {
