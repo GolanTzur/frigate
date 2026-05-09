@@ -53,6 +53,7 @@ export default function PreviewThumbnailPlayer({
   const { data: config } = useSWR<FrigateConfig>("config");
   const [imgRef, imgLoaded, onImgLoad] = useImageLoaded();
 
+  console.log("ALL PREVIEWS", allPreviews);
   // interaction
 
   const [ignoreClick, setIgnoreClick] = useState(false);

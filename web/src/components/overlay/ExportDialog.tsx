@@ -33,6 +33,7 @@ import { GenericVideoPlayer } from "../player/GenericVideoPlayer";
 import { useTranslation } from "react-i18next";
 
 const EXPORT_OPTIONS = [
+  "entire clip",
   "1",
   "4",
   "8",
@@ -48,6 +49,7 @@ type ExportDialogProps = {
   latestTime: number;
   currentTime: number;
   range?: TimeRange;
+  originalClipRange?: TimeRange;
   mode: ExportMode;
   showPreview: boolean;
   setRange: (range: TimeRange | undefined) => void;
@@ -59,6 +61,7 @@ export default function ExportDialog({
   latestTime,
   currentTime,
   range,
+  originalClipRange,
   mode,
   showPreview,
   setRange,
@@ -159,14 +162,21 @@ export default function ExportDialog({
             aria-label={t("menu.export", { ns: "common" })}
             size="sm"
             onClick={() => {
-              const now = new Date(latestTime * 1000);
-              let start = 0;
-              now.setHours(now.getHours() - 1);
-              start = now.getTime() / 1000;
-              setRange({
-                before: latestTime,
-                after: start,
-              });
+              // If a range has already been provided by the caller (for
+              // example the clip's original timestamps), do not overwrite it.
+              if (!range) {
+                if (originalClipRange) {
+                  setRange(originalClipRange);
+                } else {
+                  const now = new Date(latestTime * 1000);
+                  now.setHours(now.getHours() - 1);
+                  const start = now.getTime() / 1000;
+                  setRange({
+                    before: latestTime,
+                    after: start,
+                  });
+                }
+              }
               setMode("select");
             }}
           >
@@ -189,6 +199,7 @@ export default function ExportDialog({
             latestTime={latestTime}
             currentTime={currentTime}
             range={range}
+            originalClipRange={originalClipRange}
             name={name}
             onStartExport={onStartExport}
             setName={setName}
@@ -206,6 +217,7 @@ type ExportContentProps = {
   latestTime: number;
   currentTime: number;
   range?: TimeRange;
+  originalClipRange?: TimeRange;
   name: string;
   onStartExport: () => void;
   setName: (name: string) => void;
@@ -217,6 +229,7 @@ export function ExportContent({
   latestTime,
   currentTime,
   range,
+  originalClipRange,
   name,
   onStartExport,
   setName,
@@ -227,13 +240,33 @@ export function ExportContent({
   const { t } = useTranslation(["components/dialog"]);
   const [selectedOption, setSelectedOption] = useState<ExportOption>("1");
 
+  const setRangeFromStartEnd = useCallback(
+    (start: number, end: number) => {
+      setRange({
+        after: start,
+        before: end,
+      });
+    },
+    [setRange],
+  );
+
   const onSelectTime = useCallback(
     (option: ExportOption) => {
       setSelectedOption(option);
 
       const now = new Date(latestTime * 1000);
       let start = 0;
+      const end = latestTime;
       switch (option) {
+        case "entire clip":
+          if (originalClipRange) {
+            setRange(originalClipRange);
+            return;
+          }
+          // fallback to last 24 hours if no original range available
+          now.setHours(now.getHours() - 24);
+          start = now.getTime() / 1000;
+          break;
         case "1":
           now.setHours(now.getHours() - 1);
           start = now.getTime() / 1000;
@@ -259,12 +292,9 @@ export function ExportContent({
           break;
       }
 
-      setRange({
-        before: latestTime,
-        after: start,
-      });
+      setRangeFromStartEnd(start, end);
     },
-    [latestTime, setRange],
+    [latestTime, originalClipRange, setRange, setRangeFromStartEnd],
   );
 
   return (

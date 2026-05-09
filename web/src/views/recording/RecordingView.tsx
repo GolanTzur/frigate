@@ -595,6 +595,7 @@ export function RecordingView({
                 latestTime={timeRange.before}
                 mode={exportMode}
                 range={exportRange}
+                originalClipRange={exportRange}
                 showPreview={showExportPreview}
                 setRange={(range) => {
                   setExportRange(range);

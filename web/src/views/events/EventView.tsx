@@ -100,6 +100,7 @@ export default function EventView({
   const { t } = useTranslation(["views/events"]);
   const { data: config } = useSWR<FrigateConfig>("config");
   const contentRef = useRef<HTMLDivElement | null>(null);
+  console.log("RELEVANT Currnerevieweditems", currentReviewItems);
 
   // review counts
 

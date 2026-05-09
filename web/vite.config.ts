@@ -36,6 +36,11 @@ export default defineConfig({
       changeOrigin: true,
     },
 
+     "/preview": {
+      target: "http://localhost:5000",
+      changeOrigin: true,
+    },
+
     "/live": {
       target: "http://localhost:5000",
       changeOrigin: true,

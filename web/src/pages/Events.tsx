@@ -235,35 +235,81 @@ const params = new URLSearchParams({
   cameras: selectedCameras,
 });
 
-const reviewKey = useMemo(() => {
+/*const reviewKey =
+  `review?reviewed=1` +
+  `&before=${Math.floor(selectedTimeRange.before)}` +
+  `&after=${Math.floor(selectedTimeRange.after)}` +
+  `&cameras=local_cam`;
+
+console.log("DIRECT reviewKey:", reviewKey);
+
+const { data: reviews, mutate: updateSegments } =
+  useSWR<ReviewSegment[]>(
+    reviewKey,
+    reviewSegmentFetcher,
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+    }
+  );
+
+console.log("REVIEWS FROM SWR:", reviews);*/
+
+
+
+const buildReviewKey = (summary?: ReviewSummary) => {
+  console.log("buildReviewKey CALLED");
+
   const camVal =
     selectedCameras && selectedCameras.length > 0
       ? selectedCameras
       : "local_cam";
 
+  if (!summary) {
+    console.log("RETURNING NULL - no summary");
+    return null;
+  }
+
+  console.log("REVIEW SUMMARY FULL:", summary);
+
+  const firstGroup = Object.values(summary)[0];
+
+  if (!firstGroup) {
+    console.log("RETURNING NULL - no first group");
+    return null;
+  }
+
+  const firstEntry = firstGroup;
+
+  console.log("FIRST SUMMARY ENTRY:", firstEntry);
+
   const key =
     `review?reviewed=1` +
-    `&before=${Math.floor(Date.now() / 1000)}` +
-    `&after=${Math.floor(Date.now() / 1000) - 86400}` + // last 24h
+    `&before=${Math.floor(selectedTimeRange.before)}` +
+    `&after=${Math.floor(selectedTimeRange.after)}` +
     `&cameras=${camVal}`;
 
-  console.log("FINAL WORKING KEY:", key);
+  console.log("BACKEND reviewKey:", key);
 
   return key;
-}, [selectedCameras]);
+};
 
 
-
-
+console.log("ACTUAL REVIEW KEY:", buildReviewKey());
 // 🔥 SWR
 const { data: reviews, mutate: updateSegments } = useSWR<ReviewSegment[]>(
-  reviewKey,
+  buildReviewKey,
   reviewSegmentFetcher,
   {
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
   }
 );
+
+
+
+console.log("REVIEWS FROM SWR:", reviews);
+console.log("REVIEW KEY USED:", buildReviewKey);
 
   const reviewItems = useMemo<SegmentedReviewData>(() => {
     if (!reviews) {
@@ -289,7 +335,16 @@ const { data: reviews, mutate: updateSegments } = useSWR<ReviewSegment[]>(
           motion.push(segment);
           break;
       }
-    });
+    }
+  );
+
+  console.log("REVIEWS RAW:", reviews);
+console.log("BUILT REVIEW ITEMS:", {
+  all,
+  alert: alerts,
+  detection: detections,
+  significant_motion: motion,
+});
 
     return {
       all: all,
@@ -373,7 +428,7 @@ const summaryKey = `review/summary?${query.toString()}`;
 console.log("FIXED summaryKey:", summaryKey);
 
 // --- SWR ---
-const { data: reviewSummary, mutate: updateSummary } = useSWR<ReviewSummary>(
+const { data: summary, mutate: updateSummary } = useSWR<ReviewSummary>(
   summaryKey,
   {
     revalidateOnFocus: false,
@@ -382,7 +437,7 @@ const { data: reviewSummary, mutate: updateSummary } = useSWR<ReviewSummary>(
     refreshInterval: 0,
   }
 );
-
+console.log("RAW reviewSummary:", summary);
 
 
   const reloadData = useCallback(() => {
@@ -584,7 +639,7 @@ const { data: recordingsSummary } = useSWR<RecordingsSummary>(
           startTime={selectedReviewData.start_time}
           allCameras={selectedReviewData.allCameras}
           reviewItems={reviews}
-          reviewSummary={reviewSummary}
+          reviewSummary={summary}
           allPreviews={allPreviews}
           timeRange={selectedTimeRange}
           filter={reviewFilter}
@@ -598,7 +653,7 @@ const { data: recordingsSummary } = useSWR<RecordingsSummary>(
       <EventView
         reviewItems={reviewItems}
         currentReviewItems={currentItems}
-        reviewSummary={reviewSummary}
+        reviewSummary={summary}
         recordingsSummary={recordingsSummary}
         relevantPreviews={allPreviews}
         timeRange={selectedTimeRange}
