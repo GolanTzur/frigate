@@ -175,12 +175,15 @@ const last24Hours = useMemo(() => {
 
 const selectedTimeRange = useMemo(() => {
   if (reviewSearchParams["after"] == undefined) {
-    return last24Hours;
+    return {
+      before: Math.floor(last24Hours.before),
+      after: Math.floor(last24Hours.after),
+    };
   }
 
   return {
-    before: Math.ceil(reviewSearchParams["before"]),
-    after: Math.floor(reviewSearchParams["after"]),
+    before: Math.floor(Number(reviewSearchParams["before"])),
+    after: Math.floor(Number(reviewSearchParams["after"])),
   };
 }, [last24Hours, reviewSearchParams]);
 
@@ -235,7 +238,11 @@ const params = new URLSearchParams({
   cameras: selectedCameras,
 });
 
-/*const reviewKey =
+console.log("selectedTimeRange:", selectedTimeRange);
+console.log("before:", selectedTimeRange.before);
+console.log("after:", selectedTimeRange.after);
+
+const reviewKey =
   `review?reviewed=1` +
   `&before=${Math.floor(selectedTimeRange.before)}` +
   `&after=${Math.floor(selectedTimeRange.after)}` +
@@ -243,21 +250,12 @@ const params = new URLSearchParams({
 
 console.log("DIRECT reviewKey:", reviewKey);
 
-const { data: reviews, mutate: updateSegments } =
-  useSWR<ReviewSegment[]>(
-    reviewKey,
-    reviewSegmentFetcher,
-    {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-    }
-  );
-
-console.log("REVIEWS FROM SWR:", reviews);*/
 
 
 
-const buildReviewKey = (summary?: ReviewSummary) => {
+
+
+/*const buildReviewKey = (summary?: ReviewSummary) => {
   console.log("buildReviewKey CALLED");
 
   const camVal =
@@ -295,26 +293,32 @@ const buildReviewKey = (summary?: ReviewSummary) => {
 };
 
 
-console.log("ACTUAL REVIEW KEY:", buildReviewKey());
+console.log("ACTUAL REVIEW KEY:", buildReviewKey());*/
 // 🔥 SWR
-const { data: reviews, mutate: updateSegments } = useSWR<ReviewSegment[]>(
-  buildReviewKey,
-  reviewSegmentFetcher,
-  {
-    revalidateOnFocus: false,
-    revalidateOnReconnect: false,
-  }
-);
+const { data: reviews, mutate: updateSegments } =
+  useSWR<ReviewSegment[]>(
+    reviewKey,
+    reviewSegmentFetcher,
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+    }
+  );
 
 
 
 console.log("REVIEWS FROM SWR:", reviews);
-console.log("REVIEW KEY USED:", buildReviewKey);
+
 
   const reviewItems = useMemo<SegmentedReviewData>(() => {
-    if (!reviews) {
-      return undefined;
-    }
+   if (!reviews) {
+  return {
+    all: [],
+    alert: [],
+    detection: [],
+    significant_motion: [],
+  };
+}
 
     const all: ReviewSegment[] = [];
     const alerts: ReviewSegment[] = [];
@@ -354,17 +358,18 @@ console.log("BUILT REVIEW ITEMS:", {
     };
   }, [reviews]);
 
-  const currentItems = useMemo(() => {
+const currentItems = useMemo(() => {
   console.log("severity:", severity);
   console.log("showReviewed:", showReviewed);
   console.log("reviewItems:", reviewItems);
 
   if (!reviewItems || !severity) {
     console.log("NO reviewItems OR severity");
-    return null;
+
+    return [];
   }
 
-  let current;
+  let current: ReviewSegment[];
 
   if (reviewFilter?.showAll) {
     current = reviewItems.all;
@@ -374,20 +379,18 @@ console.log("BUILT REVIEW ITEMS:", {
 
   console.log("CURRENT BEFORE FILTER:", current);
 
-  if (!current || current.length == 0) {
+  if (!current || current.length === 0) {
     console.log("EMPTY CURRENT");
+
     return [];
   }
 
-  if (!showReviewed) {
-    const filtered = current.filter((seg) => !seg.has_been_reviewed);
-    console.log("FILTERED (not reviewed):", filtered);
-    return filtered;
-  } else {
-    console.log("RETURNING ALL:", current);
-    return current;
-  }
-}, [severity, reviewFilter, showReviewed, reviewItems?.all.length]);
+  // 🔥 IMPORTANT:
+  // your only event currently has:
+  // has_been_reviewed = true
+  // so we force showing reviewed items
+  return current;
+}, [severity, reviewFilter, showReviewed, reviewItems]);
 
   // review summary
 
