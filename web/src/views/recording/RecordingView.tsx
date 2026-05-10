@@ -78,18 +78,31 @@ console.log("RENDER RecordingView");
 type RecordingViewProps = {
   startCamera: string;
   startTime: number;
+
+  selectedReview: {
+    start_time: number;
+    end_time?: number;
+  };
+
   reviewItems?: ReviewSegment[];
   reviewSummary?: ReviewSummary;
+
   timeRange: TimeRange;
+
   allCameras: string[];
+
   allPreviews?: Preview[];
+
   filter?: ReviewFilter;
+
   updateFilter: (newFilter: ReviewFilter) => void;
+
   refreshData?: () => void;
 };
 export function RecordingView({
   startCamera,
   startTime,
+  selectedReview,
   reviewItems,
   reviewSummary,
   timeRange,
@@ -103,9 +116,9 @@ export function RecordingView({
   const { data: config } = useSWR<FrigateConfig>("config");
   const navigate = useNavigate();
   const contentRef = useRef<HTMLDivElement | null>(null);
-
   // recordings summary
 
+  console.log("selectedReview range:", selectedReview.start_time, selectedReview.end_time);
   const timezone = useTimezone(config);
 
   const allowedCameras = useAllowedCameras();
@@ -540,6 +553,10 @@ export function RecordingView({
     [mainControllerRef],
   );
 
+ const previewTimeRange: TimeRange = {
+  before: (selectedReview.end_time ?? startTime) + 10,
+  after: selectedReview.start_time - 10,
+};
   return (
     <DetailStreamProvider
       isDetailMode={timelineType === "detail"}
@@ -589,13 +606,15 @@ export function RecordingView({
               onSelectCamera={onSelectCamera}
             />
             {isDesktop && (
+
+              
               <ExportDialog
                 camera={mainCamera}
                 currentTime={currentTime}
                 latestTime={timeRange.before}
                 mode={exportMode}
                 range={exportRange}
-                originalClipRange={exportRange}
+                originalClipRange={previewTimeRange}
                 showPreview={showExportPreview}
                 setRange={(range) => {
                   setExportRange(range);

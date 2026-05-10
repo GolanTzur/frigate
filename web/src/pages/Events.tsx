@@ -619,11 +619,20 @@ const { data: recordingsSummary } = useSWR<RecordingsSummary>(
     setStartTime(recording.startTime);
     const allCameras = reviewFilter?.cameras ?? Object.keys(config.cameras);
 
-    return {
-      camera: recording.camera,
-      start_time: recording.startTime,
-      allCameras: allCameras,
-    };
+   const matchedReview = reviews
+  .filter((review) => review.camera === recording.camera)
+  .sort(
+    (a, b) =>
+      Math.abs(a.start_time - recording.startTime) -
+      Math.abs(b.start_time - recording.startTime)
+  )[0];
+
+return {
+  camera: recording.camera,
+  start_time: recording.startTime,
+  end_time: matchedReview?.end_time,
+  allCameras: allCameras,
+};
 
     // previews will not update after item is selected
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -635,10 +644,13 @@ const { data: recordingsSummary } = useSWR<RecordingsSummary>(
 
   if (recording) {
     if (selectedReviewData) {
+
+      //console.log("MATCHING PREVIEW:", matchingPreview);
       return (
         <RecordingView
           key={selectedTimeRange.before}
           startCamera={selectedReviewData.camera}
+          selectedReview={selectedReviewData}
           startTime={selectedReviewData.start_time}
           allCameras={selectedReviewData.allCameras}
           reviewItems={reviews}

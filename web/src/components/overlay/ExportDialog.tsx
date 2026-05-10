@@ -33,7 +33,7 @@ import { GenericVideoPlayer } from "../player/GenericVideoPlayer";
 import { useTranslation } from "react-i18next";
 
 const EXPORT_OPTIONS = [
-  "entire clip",
+  "alerted section",
   "1",
   "4",
   "8",
@@ -71,7 +71,7 @@ export default function ExportDialog({
   const { t } = useTranslation(["components/dialog"]);
   const [name, setName] = useState("");
 
-  console.log(originalClipRange?.before, originalClipRange?.after);
+  console.log("before:",originalClipRange?.before, " after:" ,originalClipRange?.after);
 
   const onStartExport = useCallback(() => {
     if (!range) {
@@ -259,14 +259,31 @@ export function ExportContent({
       const now = new Date(latestTime * 1000);
       let start = 0;
       const end = latestTime;
+      //const normalizeOption=option.trim();
+      //console.log("option:", normalizeOption);
+
+      console.log("TYPE:", typeof option);
+      console.log("RAW OPTION:", option);
+      console.log("STRINGIFIED:", JSON.stringify(option));
+
+      /*if (option === "alerted section") {
+  console.log(
+    "alerted section selected",
+    "originalClipRange:",
+    originalClipRange
+  );
+}*/
+
       switch (option) {
-        case "entire clip":
+        
+        case "alerted section":
+          console.log("alerted section selected", "originalClipRange:", originalClipRange);
           if (originalClipRange) {
             setRange(originalClipRange);
             return;
           }
-          // fallback to last 24 hours if no original range available
-          now.setHours(now.getHours() - 24);
+          // fallback to last 1 hour if no original range available
+          now.setHours(now.getHours() - 1);
           start = now.getTime() / 1000;
           break;
         case "1":
