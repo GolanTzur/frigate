@@ -619,6 +619,8 @@ const { data: recordingsSummary } = useSWR<RecordingsSummary>(
     setStartTime(recording.startTime);
     const allCameras = reviewFilter?.cameras ?? Object.keys(config.cameras);
 
+
+    // compare recording start time to review segments and find the closest one
    const matchedReview = reviews
   .filter((review) => review.camera === recording.camera)
   .sort(

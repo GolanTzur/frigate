@@ -31,6 +31,11 @@ export default defineConfig({
       changeOrigin: true,
     },
 
+    "/exports": {
+     target: "http://localhost:5000",
+     changeOrigin: true,
+    },
+
     "/vod": {
       target: "http://localhost:5000",
       changeOrigin: true,
