@@ -259,25 +259,10 @@ export function ExportContent({
       const now = new Date(latestTime * 1000);
       let start = 0;
       const end = latestTime;
-      //const normalizeOption=option.trim();
-      //console.log("option:", normalizeOption);
-
-      console.log("TYPE:", typeof option);
-      console.log("RAW OPTION:", option);
-      console.log("STRINGIFIED:", JSON.stringify(option));
-
-      /*if (option === "alerted section") {
-  console.log(
-    "alerted section selected",
-    "originalClipRange:",
-    originalClipRange
-  );
-}*/
-
+      
       switch (option) {
         
         case "alerted section":
-          console.log("alerted section selected", "originalClipRange:", originalClipRange);
           if (originalClipRange) {
             setRange(originalClipRange);
             return;

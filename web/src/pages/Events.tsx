@@ -243,10 +243,10 @@ console.log("before:", selectedTimeRange.before);
 console.log("after:", selectedTimeRange.after);
 
 const reviewKey =
-  `review?reviewed=1` +
+  `review?reviewed=${showReviewed ? 1 : 0}` +
   `&before=${Math.floor(selectedTimeRange.before)}` +
   `&after=${Math.floor(selectedTimeRange.after)}` +
-  `&cameras=local_cam`;
+  `&cameras=${selectedCameras}`;
 
 console.log("DIRECT reviewKey:", reviewKey);
 
